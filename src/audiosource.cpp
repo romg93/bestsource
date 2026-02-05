@@ -299,6 +299,10 @@ static std::array<uint8_t, HashSize> GetHash(const AVFrame *Frame) {
 
 BestAudioSource::Cache::CacheBlock::CacheBlock(int64_t FrameNumber, AVFrame *Frame) : FrameNumber(FrameNumber), Frame(Frame) {
     assert(Frame->nb_samples > 0);
+    for (int i = 0; i < AV_NUM_DATA_POINTERS; i++)
+        if (Frame->buf[i])
+            Size += Frame->buf[i]->size;
+
     for (int i = 0; i < Frame->nb_extended_buf; i++)
         if (Frame->extended_buf[i])
             Size += Frame->extended_buf[i]->size;

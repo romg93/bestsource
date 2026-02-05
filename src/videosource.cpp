@@ -862,7 +862,7 @@ static std::array<uint8_t, HashSize> GetHash(const AVFrame *Frame) {
 }
 
 BestVideoSource::Cache::CacheBlock::CacheBlock(int64_t FrameNumber, AVFrame *Frame) : FrameNumber(FrameNumber), Frame(Frame) {
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < AV_NUM_DATA_POINTERS; i++)
         if (Frame->buf[i])
             Size += Frame->buf[i]->size;
 }
