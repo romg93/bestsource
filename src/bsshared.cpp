@@ -49,7 +49,7 @@ double BSRational::ToDouble() const {
 std::filesystem::path CreateProbablyUTF8Path(const char *Filename) {
     assert(Filename);
     try {
-        return std::filesystem::u8path(Filename);
+        return std::filesystem::path(std::string(Filename));
     } catch (...) { // exceptions are "implementation defined" so this is what you get
         return std::filesystem::path(Filename);
     }
@@ -108,15 +108,21 @@ static std::filesystem::path GetDefaultCacheSubTreePath() {
 
 static std::filesystem::path MangleCachePath(const std::filesystem::path &CacheBasePath, const std::filesystem::path &Source) {
     std::filesystem::path CachePath = std::filesystem::absolute(CacheBasePath);
-    // Since it's possible to pass in urls, ffmpeg protocols and other things with characters not allowed on disk we now have to remove them from the path
-    std::string Tmp = Source.relative_path().u8string();
-    for (auto &iter : Tmp) {
-        if (iter == '?' || iter == '*' || iter == '<' || iter == '>' || iter == '|' || iter == '"')
-            iter = '_';
-        else if (iter == ':')
-            iter = '/';
+#ifdef _WIN32
+    const std::u32string forbidden = U"<>:\"/\\|?*";
+#else
+    const std::u32string forbidden = U"/";
+#endif
+    for (const auto &part : Source.relative_path()) {
+        std::string cleanPart;
+        for (char32_t c : part.native()) {
+            if (forbidden.find(c) != std::u32string::npos) 
+                cleanPart += '_';
+            else
+                cleanPart += static_cast<char>(c);
+        }
+        CachePath /= cleanPart;
     }
-    CachePath /= std::filesystem::u8path(Tmp);
     return CachePath.make_preferred();
 }
 

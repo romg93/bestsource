@@ -152,9 +152,11 @@ void LWVideoDecoder::OpenFile(const std::filesystem::path &SourceFile, const std
     for (const auto &Iter : LAVFOpts)
         av_dict_set(&Dict, Iter.first.c_str(), Iter.second.c_str(), 0);
 
-    if (avformat_open_input(&FormatContext, SourceFile.u8string().c_str(), nullptr, &Dict) != 0) {
+    const std::string SourceFileUtf8 = SourceFile.string();
+        
+    if (avformat_open_input(&FormatContext, SourceFileUtf8.c_str(), nullptr, &Dict) != 0) {
         av_dict_free(&Dict);
-        throw BestSourceException("Couldn't open '" + SourceFile.u8string() + "'");
+        throw BestSourceException("Couldn't open '" + SourceFileUtf8 + "'");
     }
 
     av_dict_free(&Dict);
@@ -961,13 +963,16 @@ BestVideoSource::BestVideoSource(const std::filesystem::path &SourceFile, const 
     VideoTrack = Decoder->GetTrack();
     FileSize = Decoder->GetSourceSize();
 
+    const std::string SourceUtf8 = Source.string();
+    const std::string CachePathUtf8 = CachePath.string();
+
     if (CacheMode == bcmDisable || !ReadVideoTrackIndex(IsAbsolutePathCacheMode(CacheMode), CachePath)) {
         if (!IndexTrack(Progress))
-            throw BestSourceException("Indexing of '" + Source.u8string() + "' track #" + std::to_string(VideoTrack) + " failed, if hwdevice is set this may also be an indication that hardware decoding is unsupported");
+            throw BestSourceException("Indexing of '" + SourceUtf8 + "' track #" + std::to_string(VideoTrack) + " failed, if hwdevice is set this may also be an indication that hardware decoding is unsupported");
 
         if (ShouldWriteIndex(CacheMode, TrackIndex.Frames.size())) {
             if (!WriteVideoTrackIndex(IsAbsolutePathCacheMode(CacheMode), CachePath))
-                throw BestSourceException("Failed to write index to '" + CachePath.u8string() + "' for track #" + std::to_string(VideoTrack));
+                throw BestSourceException("Failed to write index to '" + CachePathUtf8 + "' for track #" + std::to_string(VideoTrack));
         }
     }
 

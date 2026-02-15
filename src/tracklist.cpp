@@ -32,9 +32,11 @@ void BestTrackList::OpenFile(const std::filesystem::path &SourceFile, const std:
     for (const auto &Iter : LAVFOpts)
         av_dict_set(&Dict, Iter.first.c_str(), Iter.second.c_str(), 0);
 
-    if (avformat_open_input(&FormatContext, SourceFile.u8string().c_str(), nullptr, &Dict) != 0) {
+    const std::string SourceFileUtf8 = SourceFile.string();
+
+    if (avformat_open_input(&FormatContext, SourceFileUtf8.c_str(), nullptr, &Dict) != 0) {
         av_dict_free(&Dict);
-        throw BestSourceException("Couldn't open '" + SourceFile.u8string() + "'");
+        throw BestSourceException("Couldn't open '" + SourceFileUtf8 + "'");
     }
 
     av_dict_free(&Dict);

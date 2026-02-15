@@ -76,10 +76,12 @@ void LWAudioDecoder::OpenFile(const std::filesystem::path &SourceFile, int Track
     AVDictionary *Dict = nullptr;
     for (const auto &Iter : LAVFOpts)
         av_dict_set(&Dict, Iter.first.c_str(), Iter.second.c_str(), 0);
+    
+    const std::string SourceFileUtf8 = SourceFile.string();
 
-    if (avformat_open_input(&FormatContext, SourceFile.u8string().c_str(), nullptr, &Dict) != 0) {
+    if (avformat_open_input(&FormatContext, SourceFileUtf8.c_str(), nullptr, &Dict) != 0) {
         av_dict_free(&Dict);
-        throw BestSourceException("Couldn't open '" + SourceFile.u8string() + "'");
+        throw BestSourceException("Couldn't open '" + SourceFileUtf8 + "'");
     }
 
     av_dict_free(&Dict);
@@ -381,12 +383,16 @@ BestAudioSource::BestAudioSource(const std::filesystem::path &SourceFile, int Tr
     FileSize = Decoder->GetSourceSize();
 
     if (CacheMode == bcmDisable || !ReadAudioTrackIndex(IsAbsolutePathCacheMode(CacheMode), CachePath)) {
+
+        const std::string SourceUtf8 = Source.string();
+        const std::string CachePathUtf8 = CachePath.string();
+
         if (!IndexTrack(Progress))
-            throw BestSourceException("Indexing of '" + Source.u8string() + "' track #" + std::to_string(AudioTrack) + " failed");
+            throw BestSourceException("Indexing of '" + SourceUtf8 + "' track #" + std::to_string(AudioTrack) + " failed");
 
         if (ShouldWriteIndex(CacheMode, TrackIndex.Frames.size())) {
             if (!WriteAudioTrackIndex(IsAbsolutePathCacheMode(CacheMode), CachePath))
-                throw BestSourceException("Failed to write index to '" + CachePath.u8string() + "' for track #" + std::to_string(AudioTrack));
+                throw BestSourceException("Failed to write index to '" + CachePathUtf8 + "' for track #" + std::to_string(AudioTrack));
         }
     }
 
